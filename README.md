@@ -1,2 +1,0 @@
-# geometrydashfeud
-Geometry Dash Fued

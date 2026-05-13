@@ -1,0 +1,639 @@
+import React, { useState, useEffect } from 'react';
+import { Zap, X, Trophy, RotateCcw } from 'lucide-react';
+
+const QUESTIONS = [
+  {
+    question: "The hardest Geometry Dash level is ___",
+    answers: [
+      { text: "Slaughterhouse", points: 40 },
+      { text: "Arcturus", points: 25 },
+      { text: "Zodiac", points: 15 },
+      { text: "Bloodlust", points: 10 },
+      { text: "Tartarus", points: 10 }
+    ]
+  },
+  {
+    question: "The best Geometry Dash creator is ___",
+    answers: [
+      { text: "RobTop", points: 35 },
+      { text: "Viprin", points: 25 },
+      { text: "Krmal", points: 20 },
+      { text: "Riot", points: 12 },
+      { text: "Zobros", points: 8 }
+    ]
+  },
+  {
+    question: "The most iconic song in GD is ___",
+    answers: [
+      { text: "At The Speed Of Light", points: 30 },
+      { text: "Theory of Everything", points: 25 },
+      { text: "Deadlocked", points: 20 },
+      { text: "Fingerdash", points: 15 },
+      { text: "Clubstep", points: 10 }
+    ]
+  },
+  {
+    question: "The most annoying game mechanic is ___",
+    answers: [
+      { text: "Wave", points: 35 },
+      { text: "Invisible portals", points: 25 },
+      { text: "Fake spikes", points: 20 },
+      { text: "Robot", points: 12 },
+      { text: "Memory levels", points: 8 }
+    ]
+  },
+  {
+    question: "The most overrated level is ___",
+    answers: [
+      { text: "Sonic Wave", points: 30 },
+      { text: "Cataclysm", points: 25 },
+      { text: "Bloodbath", points: 22 },
+      { text: "Acu", points: 15 },
+      { text: "Clubstep", points: 8 }
+    ]
+  },
+  {
+    question: "The thing you rage quit at most is ___",
+    answers: [
+      { text: "95% deaths", points: 40 },
+      { text: "Wave spam", points: 25 },
+      { text: "Tight timings", points: 18 },
+      { text: "Straight fly", points: 10 },
+      { text: "Triple spikes", points: 7 }
+    ]
+  },
+  {
+    question: "The best game mode in GD is ___",
+    answers: [
+      { text: "Cube", points: 30 },
+      { text: "Ship", points: 28 },
+      { text: "Ball", points: 20 },
+      { text: "UFO", points: 12 },
+      { text: "Spider", points: 10 }
+    ]
+  },
+  {
+    question: "The first demon most people beat is ___",
+    answers: [
+      { text: "The Nightmare", points: 40 },
+      { text: "The Lightning Road", points: 30 },
+      { text: "Platinum Adventure", points: 15 },
+      { text: "Speed Racer", points: 10 },
+      { text: "X", points: 5 }
+    ]
+  }
+];
+
+export default function GeometryDashFeud() {
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [strikes, setStrikes] = useState(0);
+  const [revealedAnswers, setRevealedAnswers] = useState([]);
+  const [guess, setGuess] = useState('');
+  const [gameOver, setGameOver] = useState(false);
+  const [gameWon, setGameWon] = useState(false);
+  const [message, setMessage] = useState('');
+  const [shake, setShake] = useState(false);
+
+  const currentQuestion = QUESTIONS[currentQuestionIndex];
+  const maxStrikes = 3;
+
+  const handleGuess = () => {
+    if (!guess.trim() || gameOver || gameWon) return;
+
+    const normalizedGuess = guess.toLowerCase().trim();
+    const matchedIndex = currentQuestion.answers.findIndex(
+      (answer) => answer.text.toLowerCase().includes(normalizedGuess) || normalizedGuess.includes(answer.text.toLowerCase())
+    );
+
+    if (matchedIndex !== -1 && !revealedAnswers.includes(matchedIndex)) {
+      // Correct answer!
+      const answer = currentQuestion.answers[matchedIndex];
+      setRevealedAnswers([...revealedAnswers, matchedIndex]);
+      setScore(score + answer.points);
+      setMessage(`✓ ${answer.text} - ${answer.points} points!`);
+      setGuess('');
+
+      // Check if all answers revealed
+      if (revealedAnswers.length + 1 === currentQuestion.answers.length) {
+        setTimeout(() => {
+          if (currentQuestionIndex + 1 < QUESTIONS.length) {
+            setCurrentQuestionIndex(currentQuestionIndex + 1);
+            setRevealedAnswers([]);
+            setMessage('Next question!');
+            setTimeout(() => setMessage(''), 2000);
+          } else {
+            setGameWon(true);
+            setMessage('🎉 You conquered all questions!');
+          }
+        }, 1500);
+      } else {
+        setTimeout(() => setMessage(''), 2000);
+      }
+    } else if (revealedAnswers.includes(matchedIndex)) {
+      setMessage('Already revealed!');
+      setShake(true);
+      setTimeout(() => {
+        setMessage('');
+        setShake(false);
+      }, 1000);
+    } else {
+      // Wrong answer
+      const newStrikes = strikes + 1;
+      setStrikes(newStrikes);
+      setMessage('✗ Not on the board!');
+      setShake(true);
+      setGuess('');
+
+      setTimeout(() => {
+        setMessage('');
+        setShake(false);
+      }, 1000);
+
+      if (newStrikes >= maxStrikes) {
+        setGameOver(true);
+        setMessage('💥 Strike out! Game Over!');
+      }
+    }
+  };
+
+  const handleReset = () => {
+    setCurrentQuestionIndex(0);
+    setScore(0);
+    setStrikes(0);
+    setRevealedAnswers([]);
+    setGuess('');
+    setGameOver(false);
+    setGameWon(false);
+    setMessage('');
+  };
+
+  const handleSkip = () => {
+    if (currentQuestionIndex + 1 < QUESTIONS.length) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setRevealedAnswers([]);
+      setMessage('Skipped to next question!');
+      setTimeout(() => setMessage(''), 2000);
+    }
+  };
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #16213e 100%)',
+      color: '#fff',
+      fontFamily: '"Orbitron", "Rajdhani", sans-serif',
+      padding: '2rem',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      {/* Animated background elements */}
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'radial-gradient(circle at 20% 50%, rgba(0, 255, 255, 0.03) 0%, transparent 50%), radial-gradient(circle at 80% 50%, rgba(255, 0, 255, 0.03) 0%, transparent 50%)',
+        animation: 'pulse 4s ease-in-out infinite',
+        pointerEvents: 'none'
+      }} />
+      
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght:400;700;900&family=Rajdhani:wght:400;500;700&display=swap');
+        
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.6; }
+        }
+        
+        @keyframes neonGlow {
+          0%, 100% { 
+            filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 0 10px currentColor);
+          }
+          50% { 
+            filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 20px currentColor) drop-shadow(0 0 30px currentColor);
+          }
+        }
+        
+        @keyframes slideIn {
+          from { 
+            transform: translateX(-100%);
+            opacity: 0;
+          }
+          to { 
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes flipIn {
+          from {
+            transform: rotateX(-90deg);
+            opacity: 0;
+          }
+          to {
+            transform: rotateX(0);
+            opacity: 1;
+          }
+        }
+        
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-10px); }
+          75% { transform: translateX(10px); }
+        }
+        
+        .answer-card {
+          transition: all 0.3s ease;
+        }
+        
+        .answer-card:hover {
+          transform: scale(1.02);
+        }
+        
+        .revealed {
+          animation: flipIn 0.5s ease;
+        }
+        
+        input:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(0, 255, 255, 0.5);
+        }
+      `}</style>
+
+      <div style={{ maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+        {/* Header */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '2rem',
+          animation: 'slideIn 0.8s ease'
+        }}>
+          <h1 style={{
+            fontSize: 'clamp(2.5rem, 6vw, 4.5rem)',
+            fontWeight: 900,
+            background: 'linear-gradient(135deg, #00ffff 0%, #ff00ff 50%, #ffff00 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            marginBottom: '0.5rem',
+            letterSpacing: '2px',
+            animation: 'neonGlow 2s ease-in-out infinite',
+            textShadow: '0 0 20px rgba(0, 255, 255, 0.5)'
+          }}>
+            GEOMETRY DASH FEUD
+          </h1>
+          <p style={{
+            fontSize: '1.2rem',
+            color: '#00ffff',
+            fontWeight: 500,
+            letterSpacing: '1px'
+          }}>
+            Guess the most popular community answers!
+          </p>
+        </div>
+
+        {/* Score and Status Bar */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '2rem',
+          background: 'rgba(255, 255, 255, 0.05)',
+          padding: '1rem',
+          borderRadius: '10px',
+          border: '2px solid rgba(0, 255, 255, 0.3)',
+          backdropFilter: 'blur(10px)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Trophy size={28} color="#ffff00" />
+            <div>
+              <div style={{ fontSize: '0.8rem', color: '#00ffff', fontWeight: 500 }}>SCORE</div>
+              <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff' }}>{score}</div>
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            {[...Array(maxStrikes)].map((_, i) => (
+              <div key={i} style={{
+                width: '50px',
+                height: '50px',
+                border: '3px solid',
+                borderColor: i < strikes ? '#ff0066' : 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: i < strikes ? 'rgba(255, 0, 102, 0.2)' : 'transparent',
+                transition: 'all 0.3s ease'
+              }}>
+                {i < strikes && <X size={32} color="#ff0066" strokeWidth={4} />}
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div style={{ fontSize: '0.8rem', color: '#00ffff', fontWeight: 500 }}>ROUND</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#fff' }}>
+              {currentQuestionIndex + 1}/{QUESTIONS.length}
+            </div>
+          </div>
+        </div>
+
+        {/* Question */}
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(255, 0, 255, 0.1) 100%)',
+          padding: '2rem',
+          borderRadius: '15px',
+          marginBottom: '2rem',
+          border: '2px solid rgba(0, 255, 255, 0.5)',
+          textAlign: 'center',
+          animation: 'slideIn 0.6s ease',
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: 'linear-gradient(90deg, #00ffff, #ff00ff, #ffff00)',
+            animation: 'pulse 2s ease-in-out infinite'
+          }} />
+          <h2 style={{
+            fontSize: 'clamp(1.5rem, 4vw, 2.2rem)',
+            fontWeight: 700,
+            color: '#fff',
+            margin: 0,
+            textShadow: '0 0 10px rgba(0, 255, 255, 0.5)'
+          }}>
+            {currentQuestion.question}
+          </h2>
+        </div>
+
+        {/* Answers Grid */}
+        <div style={{
+          display: 'grid',
+          gap: '1rem',
+          marginBottom: '2rem'
+        }}>
+          {currentQuestion.answers.map((answer, index) => {
+            const isRevealed = revealedAnswers.includes(index);
+            return (
+              <div
+                key={index}
+                className={`answer-card ${isRevealed ? 'revealed' : ''}`}
+                style={{
+                  background: isRevealed 
+                    ? 'linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(0, 255, 255, 0.05) 100%)'
+                    : 'rgba(255, 255, 255, 0.03)',
+                  border: '2px solid',
+                  borderColor: isRevealed ? '#00ffff' : 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '10px',
+                  padding: '1.5rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  minHeight: '70px',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  background: isRevealed ? '#00ffff' : 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.3rem',
+                  fontWeight: 900,
+                  color: isRevealed ? '#0a0a1a' : '#666',
+                  flexShrink: 0
+                }}>
+                  {index + 1}
+                </div>
+                
+                <div style={{
+                  flex: 1,
+                  paddingLeft: '1.5rem',
+                  fontSize: '1.3rem',
+                  fontWeight: 700,
+                  color: isRevealed ? '#00ffff' : '#666',
+                  textAlign: 'left',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px'
+                }}>
+                  {isRevealed ? answer.text : '???'}
+                </div>
+                
+                <div style={{
+                  background: isRevealed ? 'rgba(255, 255, 0, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '8px',
+                  fontSize: '1.2rem',
+                  fontWeight: 900,
+                  color: isRevealed ? '#ffff00' : '#666',
+                  border: '2px solid',
+                  borderColor: isRevealed ? '#ffff00' : 'transparent',
+                  minWidth: '60px',
+                  textAlign: 'center'
+                }}>
+                  {isRevealed ? answer.points : '??'}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Input and Message */}
+        {!gameOver && !gameWon && (
+          <div style={{
+            marginBottom: '1rem',
+            animation: 'slideIn 0.8s ease'
+          }}>
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              marginBottom: '1rem',
+              animation: shake ? 'shake 0.5s ease' : 'none'
+            }}>
+              <input
+                type="text"
+                value={guess}
+                onChange={(e) => setGuess(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleGuess()}
+                placeholder="Type your answer..."
+                style={{
+                  flex: 1,
+                  padding: '1rem 1.5rem',
+                  fontSize: '1.2rem',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '2px solid rgba(0, 255, 255, 0.3)',
+                  borderRadius: '10px',
+                  color: '#fff',
+                  fontFamily: 'inherit',
+                  fontWeight: 500,
+                  transition: 'all 0.3s ease'
+                }}
+              />
+              <button
+                onClick={handleGuess}
+                style={{
+                  padding: '1rem 2rem',
+                  fontSize: '1.2rem',
+                  background: 'linear-gradient(135deg, #00ffff 0%, #00cccc 100%)',
+                  border: 'none',
+                  borderRadius: '10px',
+                  color: '#0a0a1a',
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(0, 255, 255, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(0, 255, 255, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(0, 255, 255, 0.3)';
+                }}
+              >
+                <Zap size={20} />
+                SUBMIT
+              </button>
+            </div>
+            
+            <button
+              onClick={handleSkip}
+              style={{
+                padding: '0.8rem 1.5rem',
+                fontSize: '1rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                border: '2px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '8px',
+                color: '#fff',
+                fontWeight: 700,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                width: '100%',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.1)';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'rgba(255, 255, 255, 0.05)';
+                e.target.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+              }}
+            >
+              Skip Question
+            </button>
+          </div>
+        )}
+
+        {/* Message Display */}
+        {message && (
+          <div style={{
+            textAlign: 'center',
+            padding: '1rem',
+            background: message.includes('✗') || message.includes('💥')
+              ? 'rgba(255, 0, 102, 0.2)'
+              : message.includes('✓')
+              ? 'rgba(0, 255, 255, 0.2)'
+              : 'rgba(255, 255, 0, 0.2)',
+            borderRadius: '10px',
+            fontSize: '1.3rem',
+            fontWeight: 700,
+            color: message.includes('✗') || message.includes('💥')
+              ? '#ff0066'
+              : message.includes('✓')
+              ? '#00ffff'
+              : '#ffff00',
+            marginBottom: '1rem',
+            border: '2px solid',
+            borderColor: message.includes('✗') || message.includes('💥')
+              ? '#ff0066'
+              : message.includes('✓')
+              ? '#00ffff'
+              : '#ffff00',
+            animation: 'slideIn 0.3s ease'
+          }}>
+            {message}
+          </div>
+        )}
+
+        {/* Game Over / Won */}
+        {(gameOver || gameWon) && (
+          <div style={{
+            textAlign: 'center',
+            padding: '2rem',
+            background: gameWon 
+              ? 'linear-gradient(135deg, rgba(0, 255, 255, 0.2) 0%, rgba(255, 255, 0, 0.2) 100%)'
+              : 'linear-gradient(135deg, rgba(255, 0, 102, 0.2) 0%, rgba(255, 0, 255, 0.2) 100%)',
+            borderRadius: '15px',
+            marginTop: '2rem',
+            border: '3px solid',
+            borderColor: gameWon ? '#00ffff' : '#ff0066',
+            animation: 'flipIn 0.6s ease'
+          }}>
+            <h2 style={{
+              fontSize: '2.5rem',
+              fontWeight: 900,
+              marginBottom: '1rem',
+              color: gameWon ? '#00ffff' : '#ff0066',
+              textShadow: gameWon 
+                ? '0 0 20px rgba(0, 255, 255, 0.8)'
+                : '0 0 20px rgba(255, 0, 102, 0.8)'
+            }}>
+              {gameWon ? '🎉 VICTORY!' : '💥 GAME OVER'}
+            </h2>
+            <p style={{
+              fontSize: '1.5rem',
+              marginBottom: '2rem',
+              color: '#fff',
+              fontWeight: 700
+            }}>
+              Final Score: {score} points
+            </p>
+            <button
+              onClick={handleReset}
+              style={{
+                padding: '1rem 2rem',
+                fontSize: '1.3rem',
+                background: 'linear-gradient(135deg, #ff00ff 0%, #ff0066 100%)',
+                border: 'none',
+                borderRadius: '10px',
+                color: '#fff',
+                fontWeight: 900,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 15px rgba(255, 0, 255, 0.4)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 20px rgba(255, 0, 255, 0.6)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 15px rgba(255, 0, 255, 0.4)';
+              }}
+            >
+              <RotateCcw size={24} />
+              PLAY AGAIN
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
